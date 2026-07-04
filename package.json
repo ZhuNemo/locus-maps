@@ -1,0 +1,24 @@
+{
+  "name": "locus-maps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZhuNemo/locus-maps.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ZhuNemo/locus-maps/issues"
+  },
+  "homepage": "https://github.com/ZhuNemo/locus-maps#readme",
+  "dependencies": {
+    "cesium": "^1.143.0"
+  }
+}

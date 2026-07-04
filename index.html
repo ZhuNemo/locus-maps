@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locus Maps - 3D 地球</title>
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.118/Build/Cesium/Widgets/widgets.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        body { display: flex; flex-direction: column; background: #f5f5f5; }
+        .locus-header {
+            flex-shrink: 0;
+            width: 100%;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            z-index: 30;
+            min-height: 64px;
+        }
+        .locus-header .brand {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+        }
+        .locus-header .brand h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        .locus-header .brand .sub {
+            font-size: 14px;
+            color: #666;
+            font-weight: 400;
+        }
+        .locus-header .brand .custom-message {
+            font-size: 14px;
+            color: #555;
+            font-weight: 400;
+            padding-left: 14px;
+            border-left: 2px solid #d0d0d0;
+            font-style: italic;
+            white-space: nowrap;
+        }
+        .locus-header .brand .custom-message a {
+            color: #0066cc;
+            text-decoration: none;
+            font-style: normal;
+            font-weight: 500;
+        }
+        .locus-header .brand .custom-message a:hover {
+            text-decoration: underline;
+        }
+        .locus-header .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .locus-header .controls .mode-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .locus-header .controls .mode-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        .locus-header .controls .mode-btn.active {
+            background: #d4e8ff;
+            border-color: #80b8ff;
+            color: #0055cc;
+        }
+        .locus-header .credit {
+            font-size: 13px;
+            color: #888;
+            letter-spacing: 0.3px;
+        }
+        .locus-header .credit a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .locus-header .credit a:hover {
+            color: #000;
+        }
+        #cesiumContainer {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+        }
+        @media (max-width: 700px) {
+            .locus-header {
+                padding: 10px 16px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                min-height: auto;
+            }
+            .locus-header .brand h1 { font-size: 20px; }
+            .locus-header .brand .sub { font-size: 12px; }
+            .locus-header .brand .custom-message {
+                font-size: 12px;
+                padding-left: 0;
+                border-left: none;
+                white-space: normal;
+                width: 100%;
+                color: #777;
+            }
+            .locus-header .controls {
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .locus-header .credit { font-size: 11px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="locus-header">
+        <div class="brand">
+            <h1>🌍 Locus Maps</h1>
+            <span class="sub">3D 地球</span>
+            <span class="custom-message">
+                个人开发者，可以访问我的 <a href="https://github.com/ZhuNemo/" target="_blank">GitHub主页</a>
+            </span>
+        </div>
+        <div class="controls">
+            <button id="modeToggleBtn" class="mode-btn active">☀️ 亮白模式</button>
+            <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
+        </div>
+        <div class="credit">
+            基于 <a href="https://cesium.com/" target="_blank">Cesium</a> ·
+            <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>
+        </div>
+    </header>
+
+    <div id="cesiumContainer"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "cesium": "https://unpkg.com/cesium@1.118/Build/Cesium/index.js",
+                "cesium/Build/Cesium/Widgets/widgets.css": "https://unpkg.com/cesium@1.118/Build/Cesium/Widgets/widgets.css"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import {
+            Viewer,
+            createOsmBuildingsAsync,
+            Cartesian3,
+            Ion,
+            CesiumTerrainProvider,
+            SceneMode
+        } from 'cesium';
+
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTQ3YmUwNC1iZTllLTQzZjktYmFiMS04MGUzNjdhMTQ0MjIiLCJpZCI6NDUyMzc2LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODMxNTA2Mjh9.G0ahaSnL8lL6yJtFmq4mc3W3SnB8o4Ma6pKsQDrrUVU';
+
+        const terrainProvider = await CesiumTerrainProvider.fromIonAssetId(1, {
+            requestVertexNormals: true,
+            requestWaterMask: true
+        });
+
+        // ✅ 关键修改：不再禁用 timeline 和 animation，让它们始终存在
+        const viewer = new Viewer('cesiumContainer', {
+            terrainProvider: terrainProvider,
+            baseLayerPicker: true,
+            infoBox: false,
+            sceneModePicker: false,
+            sceneMode: SceneMode.SCENE3D,
+            // 不设置 timeline 和 animation，默认为 true
+            locale: 'zh-CN',
+        });
+
+        // --- 光照控制 ---
+        let isLightingEnabled = false; // false=亮白, true=真实光照
+        viewer.scene.globe.enableLighting = false;
+        viewer.scene.globe.showWaterEffect = true;
+        viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
+
+        // 初始状态下，隐藏时间轴和动画控件（因为默认是亮白模式）
+        viewer.timeline.container.style.display = 'none';
+        viewer.animation.container.style.display = 'none';
+
+        const toggleBtn = document.getElementById('modeToggleBtn');
+
+        function switchLighting(enableLighting) {
+            isLightingEnabled = enableLighting;
+            viewer.scene.globe.enableLighting = enableLighting;
+            if (enableLighting) {
+                // 显示时间轴和动画
+                viewer.timeline.container.style.display = 'block';
+                viewer.animation.container.style.display = 'block';
+                toggleBtn.textContent = '🌍 真实光照';
+                toggleBtn.classList.remove('active');
+            } else {
+                // 隐藏时间轴和动画
+                viewer.timeline.container.style.display = 'none';
+                viewer.animation.container.style.display = 'none';
+                toggleBtn.textContent = '☀️ 亮白模式';
+                toggleBtn.classList.add('active');
+            }
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            switchLighting(!isLightingEnabled);
+        });
+
+        // --- 建筑控制 ---
+        let buildingsPrimitive = null;
+        let buildingsVisible = true;
+        const toggleBuildingsBtn = document.getElementById('buildingsToggleBtn');
+
+        try {
+            buildingsPrimitive = await createOsmBuildingsAsync();
+            viewer.scene.primitives.add(buildingsPrimitive);
+        } catch (e) {
+            console.warn('建筑加载失败', e);
+            toggleBuildingsBtn.textContent = '🚫 建筑不可用';
+            toggleBuildingsBtn.disabled = true;
+            toggleBuildingsBtn.style.opacity = '0.5';
+            toggleBuildingsBtn.style.cursor = 'not-allowed';
+        }
+
+        toggleBuildingsBtn.addEventListener('click', () => {
+            if (!buildingsPrimitive) return;
+            buildingsVisible = !buildingsVisible;
+            buildingsPrimitive.show = buildingsVisible;
+            if (buildingsVisible) {
+                toggleBuildingsBtn.textContent = '🏢 3D建筑';
+                toggleBuildingsBtn.classList.add('active');
+            } else {
+                toggleBuildingsBtn.textContent = '🏚️ 建筑隐藏';
+                toggleBuildingsBtn.classList.remove('active');
+            }
+        });
+
+        viewer.camera.flyTo({
+            destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
+            duration: 3
+        });
+
+        console.log('🌍 Locus Maps 启动成功！');
+        console.log('💡 点击 "☀️ 亮白模式" 可切换光照，时间轴将联动显示/隐藏。');
+    </script>
+</body>
+</html>
