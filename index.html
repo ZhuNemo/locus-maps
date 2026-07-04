@@ -102,6 +102,114 @@
         .locus-header .credit a:hover {
             color: #000;
         }
+                /* --- 重置视角按钮 (圆形图标) --- */
+        .locus-header .controls .reset-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+        .locus-header .controls .reset-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+
+        /* --- 信息按钮 (ℹ️) --- */
+        .info-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #555;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+
+        /* --- 信息弹窗 (模态框) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px 40px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+        .modal-box h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .modal-box p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #444;
+            margin: 10px 0;
+        }
+        .modal-box .close-btn {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .modal-box .close-btn:hover {
+            color: #000;
+        }
+
+        /* --- 手机适配（响应式）--- */
+        /* 在现有的 @media (max-width: 700px) 里面，找到 .locus-header .controls 的样式，
+           如果你看到它已经有 justify-content: space-between; 就不用管，
+           如果没有，就在那个媒体查询里加上下面这一行 */
+        /* 注：如果你发现媒体查询里没有 .modal-box，就在最后加上： */
+        @media (max-width: 700px) {
+            .modal-box {
+                padding: 24px 20px;
+            }
+        }
         #cesiumContainer {
             flex: 1;
             width: 100%;
@@ -146,6 +254,8 @@
         <div class="controls">
             <button id="modeToggleBtn" class="mode-btn active">☀️ 亮白模式</button>
             <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
+            <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
+            <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
         </div>
         <div class="credit">
             基于 <a href="https://cesium.com/" target="_blank">Cesium</a> ·
@@ -154,6 +264,34 @@
     </header>
 
     <div id="cesiumContainer"></div>
+        <!-- 信息弹窗 -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeInfoBtn" class="close-btn">✕</button>
+            <h2>🌍 关于 Locus Maps</h2>
+            <p>
+                <strong>Locus Maps</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地图”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
+            </p>
+            <p>
+                📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制。
+            </p>
+            <p>
+                顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，重置视角及北向上，查看关于信息。
+            </p>
+             <p>
+                使用人工智能辅助开发。
+            </p>
+            <p>
+                📁 开放源代码，若你想要代码文件...请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。
+            </p>
+            <p>
+                tips：Bing的图源在中国大陆路网显示有误，所以建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"时不要开启3D模型，会严重错位。浏览非大陆地区任何图层均可。
+            </p>
+            <p style="font-size:13px; color:#999; margin-top:16px;">
+                数据来源：Cesium ion · OpenStreetMap · Natural Earth
+            </p>
+        </div>
+    </div>
 
     <script type="importmap">
         {
@@ -171,7 +309,8 @@
             Cartesian3,
             Ion,
             CesiumTerrainProvider,
-            SceneMode
+            SceneMode,
+            Math as CesiumMath
         } from 'cesium';
 
         Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTQ3YmUwNC1iZTllLTQzZjktYmFiMS04MGUzNjdhMTQ0MjIiLCJpZCI6NDUyMzc2LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODMxNTA2Mjh9.G0ahaSnL8lL6yJtFmq4mc3W3SnB8o4Ma6pKsQDrrUVU';
@@ -262,6 +401,62 @@
 
         console.log('🌍 Locus Maps 启动成功！');
         console.log('💡 点击 "☀️ 亮白模式" 可切换光照，时间轴将联动显示/隐藏。');
+                // =============================================
+        // 🧭 重置视角功能（原地恢复俯视，正北朝上）
+        // =============================================
+        const resetBtn = document.getElementById('resetViewBtn');
+
+        resetBtn.addEventListener('click', () => {
+            // 获取当前相机位置（经纬度 + 高度）
+            const cartographic = viewer.camera.positionCartographic;
+            const longitude = cartographic.longitude;
+            const latitude = cartographic.latitude;
+            const height = cartographic.height;
+
+            // 飞回到当前位置的正上方，俯视（朝向地心），正北朝上
+            viewer.camera.flyTo({
+                destination: Cartesian3.fromRadians(longitude, latitude, height),
+                orientation: {
+                    heading: 0,      // 正北朝上（0 弧度）
+                    pitch: -CesiumMath.PI_OVER_TWO, // 垂直俯视（-90°）
+                    roll: 0
+                },
+                duration: 1.2,       // 动画持续 1.2 秒
+                complete: () => {
+                    console.log('🔄 视角已重置');
+                }
+            });
+        });
+
+        // =============================================
+        // ℹ️ 信息弹窗控制
+        // =============================================
+        const infoBtn = document.getElementById('infoBtn');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoBtn = document.getElementById('closeInfoBtn');
+
+        function openInfo() {
+            infoModal.classList.add('active');
+        }
+
+        function closeInfo() {
+            infoModal.classList.remove('active');
+        }
+
+        infoBtn.addEventListener('click', openInfo);
+        closeInfoBtn.addEventListener('click', closeInfo);
+        // 点击弹窗外部（背景）也可关闭
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) {
+                closeInfo();
+            }
+        });
+        // 按 ESC 键关闭弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && infoModal.classList.contains('active')) {
+                closeInfo();
+            }
+        });
     </script>
 </body>
 </html>
