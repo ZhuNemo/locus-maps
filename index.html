@@ -89,20 +89,6 @@
             border-color: #80b8ff;
             color: #0055cc;
         }
-        .locus-header .credit {
-            font-size: 13px;
-            color: #888;
-            letter-spacing: 0.3px;
-        }
-        .locus-header .credit a {
-            color: #555;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .locus-header .credit a:hover {
-            color: #000;
-        }
-                /* --- 重置视角按钮 (圆形图标) --- */
         .locus-header .controls .reset-btn {
             background: #f0f0f0;
             border: 1px solid #d0d0d0;
@@ -122,8 +108,6 @@
             background: #e0e0e0;
             border-color: #aaa;
         }
-
-        /* --- 信息按钮 (ℹ️) --- */
         .info-btn {
             background: #f0f0f0;
             border: 1px solid #d0d0d0;
@@ -144,8 +128,80 @@
             background: #e0e0e0;
             border-color: #aaa;
         }
-
-        /* --- 信息弹窗 (模态框) --- */
+        /* 高精度建模按钮 */
+        .controls .hd-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            display: none;
+        }
+        .controls .hd-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        .controls .hd-btn.active {
+            background: #d4e8ff;
+            border-color: #80b8ff;
+            color: #0055cc;
+        }
+        .controls .hd-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #e8e8e8;
+        }
+        .locus-header .credit {
+            font-size: 13px;
+            color: #888;
+            letter-spacing: 0.3px;
+        }
+        .locus-header .credit a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .locus-header .credit a:hover {
+            color: #000;
+        }
+        #cesiumContainer {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+        }
+        /* 提示浮层 */
+        .toast-message {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 400;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            white-space: nowrap;
+        }
+        .toast-message.show {
+            opacity: 1;
+        }
+        /* 信息弹窗 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -163,6 +219,28 @@
             display: flex;
         }
         .modal-box {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px 40px;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            scrollbar-width: thin;
+        }
+        /* 针对 Webkit 浏览器美化滚动条 */
+        .modal-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-box::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 8px;
+        }
+        .modal-box::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
             background: #ffffff;
             border-radius: 16px;
             padding: 32px 40px;
@@ -199,23 +277,6 @@
         .modal-box .close-btn:hover {
             color: #000;
         }
-
-        /* --- 手机适配（响应式）--- */
-        /* 在现有的 @media (max-width: 700px) 里面，找到 .locus-header .controls 的样式，
-           如果你看到它已经有 justify-content: space-between; 就不用管，
-           如果没有，就在那个媒体查询里加上下面这一行 */
-        /* 注：如果你发现媒体查询里没有 .modal-box，就在最后加上： */
-        @media (max-width: 700px) {
-            .modal-box {
-                padding: 24px 20px;
-            }
-        }
-        #cesiumContainer {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            min-height: 0;
-        }
         @media (max-width: 700px) {
             .locus-header {
                 padding: 10px 16px;
@@ -239,6 +300,15 @@
                 flex-wrap: wrap;
             }
             .locus-header .credit { font-size: 11px; text-align: center; }
+            .modal-box { padding: 24px 20px; }
+            .toast-message {
+                font-size: 12px;
+                padding: 8px 16px;
+                bottom: 70px;
+                white-space: normal;
+                max-width: 90%;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -254,6 +324,7 @@
         <div class="controls">
             <button id="modeToggleBtn" class="mode-btn active">☀️ 亮白模式</button>
             <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
+            <button id="hdToggleBtn" class="hd-btn">🏙️ 高精度建模</button>
             <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
             <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
         </div>
@@ -264,7 +335,8 @@
     </header>
 
     <div id="cesiumContainer"></div>
-        <!-- 信息弹窗 -->
+
+    <!-- 信息弹窗 -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-box">
             <button id="closeInfoBtn" class="close-btn">✕</button>
@@ -272,26 +344,20 @@
             <p>
                 <strong>Locus Maps</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地图”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
             </p>
-            <p>
-                📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制。
-            </p>
-            <p>
-                顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，重置视角及北向上，查看关于信息。
-            </p>
-             <p>
-                使用人工智能辅助开发。
-            </p>
-            <p>
-                📁 开放源代码，若你想要代码文件...请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。
-            </p>
-            <p>
-                tips：Bing的图源在中国大陆路网显示有误，所以建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"时不要开启3D模型，会严重错位。浏览非大陆地区任何图层均可。
-            </p>
-            <p style="font-size:13px; color:#999; margin-top:16px;">
-                数据来源：Cesium ion · OpenStreetMap · Natural Earth
-            </p>
+            <p>📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制、高精度建模显示控制（自动触发）。</p>
+            <p>顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，重置视角及北向上，查看关于信息。</p>
+            <p>使用人工智能辅助开发。</p>
+            <p>📁 开放源代码，若你想要代码文件...请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。</p>
+            <p>🏙️ 高精度建模覆盖区域(已调试完成的)： 丹佛、华盛顿DC、华盛顿州（西雅图附近）、悉尼、波士顿 。浏览时自动检测并提示，与3D建筑互斥。建模加载速度较慢，属正常现象。</p>
+            <p>以下为使用技巧：</p>
+            <p> * 如何快速确定高精度建模具体覆盖范围呢？搜索城市英文名称，自动定位并手动放大，弹出提示后点击开启高精度模型，观察突然出现明显色差或卡顿刷新的地块。</p>
+            <p>💡tips：Bing的图源在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D模型，会导致严重错位。浏览非大陆地区均可</p>
+            <p style="font-size:13px; color:#999; margin-top:16px;">数据来源：Cesium ion · OpenStreetMap · Natural Earth</p>
         </div>
     </div>
+
+    <!-- 提示浮层 -->
+    <div id="toastMessage" class="toast-message"></div>
 
     <script type="importmap">
         {
@@ -310,153 +376,399 @@
             Ion,
             CesiumTerrainProvider,
             SceneMode,
-            Math as CesiumMath
+            Math as CesiumMath,
+            Cesium3DTileset
         } from 'cesium';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTQ3YmUwNC1iZTllLTQzZjktYmFiMS04MGUzNjdhMTQ0MjIiLCJpZCI6NDUyMzc2LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODMxNTA2Mjh9.G0ahaSnL8lL6yJtFmq4mc3W3SnB8o4Ma6pKsQDrrUVU';
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMjgxOGI5ZS1lYzQ1LTRkN2ItYWRmYy05YzllOTNhYWZjYzQiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc4MzIyMzUwOX0.HdLWoiGJw7McbyHwjra0Bx7J57pVrZGIJfNk0AZjQBU';
 
         const terrainProvider = await CesiumTerrainProvider.fromIonAssetId(1, {
             requestVertexNormals: true,
             requestWaterMask: true
         });
 
-        // ✅ 关键修改：不再禁用 timeline 和 animation，让它们始终存在
+        // ----- 覆盖区域定义 -----
+        const hdAreas = [
+            { name: '丹佛',   lon: -104.9903, lat: 39.7392, radius: 10000 },
+            { name: '华盛顿', lon: -77.0369, lat: 38.9072, radius: 10000 },
+            { name: '华盛顿州', lon: -122.3321, lat: 47.6062, radius: 30000 },
+            { name: '悉尼',   lon: 151.2093, lat: -33.8688, radius: 12000 },
+            { name: '波士顿', lon: -71.0589, lat: 42.3601, radius: 8000 },
+        ];
+
+        // ----- 创建 Viewer -----
         const viewer = new Viewer('cesiumContainer', {
             terrainProvider: terrainProvider,
             baseLayerPicker: true,
             infoBox: false,
             sceneModePicker: false,
             sceneMode: SceneMode.SCENE3D,
-            // 不设置 timeline 和 animation，默认为 true
             locale: 'zh-CN',
         });
 
-        // --- 光照控制 ---
-        let isLightingEnabled = false; // false=亮白, true=真实光照
+        // ----- 光照控制 -----
+        let isLightingEnabled = false;
         viewer.scene.globe.enableLighting = false;
         viewer.scene.globe.showWaterEffect = true;
         viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
 
-        // 初始状态下，隐藏时间轴和动画控件（因为默认是亮白模式）
         viewer.timeline.container.style.display = 'none';
         viewer.animation.container.style.display = 'none';
 
         const toggleBtn = document.getElementById('modeToggleBtn');
-
         function switchLighting(enableLighting) {
             isLightingEnabled = enableLighting;
             viewer.scene.globe.enableLighting = enableLighting;
             if (enableLighting) {
-                // 显示时间轴和动画
                 viewer.timeline.container.style.display = 'block';
                 viewer.animation.container.style.display = 'block';
                 toggleBtn.textContent = '🌍 真实光照';
                 toggleBtn.classList.remove('active');
             } else {
-                // 隐藏时间轴和动画
                 viewer.timeline.container.style.display = 'none';
                 viewer.animation.container.style.display = 'none';
                 toggleBtn.textContent = '☀️ 亮白模式';
                 toggleBtn.classList.add('active');
             }
         }
-
         toggleBtn.addEventListener('click', () => {
             switchLighting(!isLightingEnabled);
         });
 
-        // --- 建筑控制 ---
+        // ----- OSM 建筑控制 -----
         let buildingsPrimitive = null;
         let buildingsVisible = true;
         const toggleBuildingsBtn = document.getElementById('buildingsToggleBtn');
+        const hdToggleBtn = document.getElementById('hdToggleBtn');
+        const toast = document.getElementById('toastMessage');
+        let toastTimeout = null;
+        let isInHdArea = false;
+        let wasOsmDisabledByHd = false;
+        let osmBuildingsWasVisible = true;
+        let hdTilesetsVisible = false; 
+
+        function showToast(text, duration = 4000) {
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
 
         try {
             buildingsPrimitive = await createOsmBuildingsAsync();
             viewer.scene.primitives.add(buildingsPrimitive);
         } catch (e) {
-            console.warn('建筑加载失败', e);
+            console.warn('OSM建筑加载失败', e);
             toggleBuildingsBtn.textContent = '🚫 建筑不可用';
             toggleBuildingsBtn.disabled = true;
             toggleBuildingsBtn.style.opacity = '0.5';
-            toggleBuildingsBtn.style.cursor = 'not-allowed';
         }
 
-        toggleBuildingsBtn.addEventListener('click', () => {
+        // 定义互斥逻辑（供后续调用）
+        function setBuildingsVisible(visible) {
             if (!buildingsPrimitive) return;
-            buildingsVisible = !buildingsVisible;
-            buildingsPrimitive.show = buildingsVisible;
-            if (buildingsVisible) {
+            buildingsVisible = visible;
+            buildingsPrimitive.show = visible;
+            if (visible) {
                 toggleBuildingsBtn.textContent = '🏢 3D建筑';
                 toggleBuildingsBtn.classList.add('active');
             } else {
                 toggleBuildingsBtn.textContent = '🏚️ 建筑隐藏';
                 toggleBuildingsBtn.classList.remove('active');
             }
+        }
+
+        // 点击建筑按钮（互斥判断在事件中）
+                toggleBuildingsBtn.addEventListener('click', () => {
+            // 如果当前在覆盖区且高精度是开启的，先关闭高精度再开启3D建筑
+            if (isInHdArea && hdTilesetsVisible) {
+                // 关闭高精度
+                setHdTilesetsVisible(false);
+                hdTilesetsVisible = false;
+                hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                hdToggleBtn.classList.remove('active');
+                // 然后开启3D建筑（如果它当前是关闭的）
+                if (!buildingsVisible && buildingsPrimitive) {
+                    setBuildingsVisible(true);
+                    // 启用高精度按钮（因为3D建筑开了，高精度变灰）
+                    hdToggleBtn.disabled = true;
+                    hdToggleBtn.style.opacity = '0.5';
+                    hdToggleBtn.style.cursor = 'not-allowed';
+                    showToast('🏙️ 高精度已关闭，3D建筑已开启');
+                }
+                return;
+            }
+
+            // 常规切换3D建筑
+            if (!buildingsPrimitive) return;
+            const newState = !buildingsVisible;
+            setBuildingsVisible(newState);
+
+            // 如果在覆盖区内，根据3D建筑状态控制高精度按钮是否可点击
+            if (isInHdArea) {
+                if (newState) {
+                    // 3D建筑开启 → 高精度按钮变灰
+                    hdToggleBtn.disabled = true;
+                    hdToggleBtn.style.opacity = '0.5';
+                    hdToggleBtn.style.cursor = 'not-allowed';
+                    // 如果高精度是开启的，强制关闭
+                    if (hdTilesetsVisible) {
+                        setHdTilesetsVisible(false);
+                        hdTilesetsVisible = false;
+                        hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                        hdToggleBtn.classList.remove('active');
+                    }
+                } else {
+                    // 3D建筑关闭 → 高精度按钮可点击
+                    hdToggleBtn.disabled = false;
+                    hdToggleBtn.style.opacity = '1';
+                    hdToggleBtn.style.cursor = 'pointer';
+                }
+            }
         });
 
+        // ----- 高精度模型加载与管理 -----
+        const hdCityAssets = [
+            { id: 354307, name: '丹佛' },
+            { id: 57588, name: '华盛顿' },
+            { id: 57590, name: '华盛顿州' },
+            { id: 2644092, name: '悉尼' },
+            { id: 354759, name: '波士顿' },
+        ];
+        const hdTilesets = [];
+
+        async function loadHdCities() {
+            // 使用并行加载，任何一个失败都不影响其他
+            const results = await Promise.allSettled(
+                hdCityAssets.map(async (item) => {
+                    const tileset = await Cesium3DTileset.fromIonAssetId(item.id);
+                    tileset.show = false;
+                    viewer.scene.primitives.add(tileset);
+                    return { name: item.name, tileset };
+                })
+            );
+            // 处理结果
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    const { name, tileset } = result.value;
+                    hdTilesets.push(tileset);
+                    console.log(`✅ 高精度模型加载: ${name}`);
+                } else {
+                    console.warn(`⚠️ 加载失败:`, result.reason);
+                }
+            }
+        }
+
+        // 非阻塞加载（不等待完成）
+        loadHdCities().catch(e => console.warn('高精度模型加载失败', e));
+
+        function setHdTilesetsVisible(visible) {
+            hdTilesetsVisible = visible;
+            for (const tileset of hdTilesets) {
+                tileset.show = visible;
+            }
+        }
+        setHdTilesetsVisible(false);
+        
+
+        // ----- 覆盖区检测与联动 -----
+        let lastCheckTime = 0;
+        function checkCameraPosition() {
+            const now = Date.now();
+            if (now - lastCheckTime < 200) return;
+            lastCheckTime = now;
+
+            const carto = viewer.camera.positionCartographic;
+            if (!carto) return;
+            const lon = CesiumMath.toDegrees(carto.longitude);
+            const lat = CesiumMath.toDegrees(carto.latitude);
+
+            let inArea = false;
+            for (const area of hdAreas) {
+                const dist = Cartesian3.distance(
+                    Cartesian3.fromDegrees(area.lon, area.lat),
+                    Cartesian3.fromDegrees(lon, lat)
+                );
+                if (dist < area.radius) {
+                    inArea = true;
+                    break;
+                }
+            }
+
+            // 进入覆盖区
+            if (inArea && !isInHdArea) {
+                isInHdArea = true;
+                osmBuildingsWasVisible = buildingsVisible; // 记录进入前的状态
+
+                // 如果当前3D建筑是开启的，自动关闭（但按钮不禁用）
+                if (buildingsVisible && buildingsPrimitive) {
+                    setBuildingsVisible(false);
+                    wasOsmDisabledByHd = true;
+                    showToast('📍 检测到高精度建模覆盖区域，已自动关闭“3D建筑”');
+                } else {
+                    wasOsmDisabledByHd = false;
+                }
+
+                // 显示高精度按钮，默认状态为关闭（不开启）
+                hdToggleBtn.style.display = 'inline-block';
+                hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                hdToggleBtn.classList.remove('active');
+                // 确保3D建筑按钮可用（不禁用）
+                toggleBuildingsBtn.disabled = false;
+                toggleBuildingsBtn.style.opacity = '1';
+                toggleBuildingsBtn.style.cursor = 'pointer';
+                // 如果高精度模型是开启的（可能残留），强制关闭
+                if (hdTilesetsVisible) {
+                    setHdTilesetsVisible(false);
+                    hdTilesetsVisible = false;
+                }
+                // 根据3D建筑状态决定高精度按钮是否可点击（互斥）
+                // 如果3D建筑开启，高精度按钮灰；否则可点
+                if (buildingsVisible) {
+                    hdToggleBtn.disabled = true;
+                    hdToggleBtn.style.opacity = '0.5';
+                    hdToggleBtn.style.cursor = 'not-allowed';
+                } else {
+                    hdToggleBtn.disabled = false;
+                    hdToggleBtn.style.opacity = '1';
+                    hdToggleBtn.style.cursor = 'pointer';
+                }
+            }
+
+            // 离开覆盖区
+            if (!inArea && isInHdArea) {
+                isInHdArea = false;
+
+                // 如果是因为进入而关闭了3D建筑，并且高精度没有开启，则恢复3D建筑
+                if (wasOsmDisabledByHd && osmBuildingsWasVisible && !hdTilesetsVisible) {
+                    if (buildingsPrimitive) {
+                        setBuildingsVisible(true);
+                    }
+                }
+
+                // 隐藏高精度按钮
+                hdToggleBtn.style.display = 'none';
+                // 恢复3D建筑按钮可用
+                toggleBuildingsBtn.disabled = false;
+                toggleBuildingsBtn.style.opacity = '1';
+                toggleBuildingsBtn.style.cursor = 'pointer';
+
+                // 如果高精度模型是开启的，自动关闭
+                if (hdTilesetsVisible) {
+                    setHdTilesetsVisible(false);
+                    hdTilesetsVisible = false;
+                    showToast('📍 已离开高精度建模覆盖区域，已自动关闭高精度模型');
+                }
+                wasOsmDisabledByHd = false;
+            }
+
+            if (isInHdArea) {
+                if (hdTilesetsVisible) {
+                    hdToggleBtn.textContent = '🏙️ 高精度建模（开启）';
+                    hdToggleBtn.classList.add('active');
+                } else {
+                    hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                    hdToggleBtn.classList.remove('active');
+                }
+            }
+        }
+
+        viewer.camera.changed.addEventListener(checkCameraPosition);
+        setTimeout(checkCameraPosition, 1000);
+
+        // ----- 高精度按钮事件 -----
+                hdToggleBtn.addEventListener('click', () => {
+            if (!isInHdArea) {
+                showToast('⚠️ 当前不在高精度建模覆盖区域');
+                return;
+            }
+            // 如果3D建筑正在开启，先关闭3D建筑
+            if (buildingsVisible && buildingsPrimitive) {
+                setBuildingsVisible(false);
+                // 3D建筑关闭后，高精度按钮恢复可点击（如果之前被禁用）
+                hdToggleBtn.disabled = false;
+                hdToggleBtn.style.opacity = '1';
+                hdToggleBtn.style.cursor = 'pointer';
+                wasOsmDisabledByHd = true; // 记录是因为高精度而关闭
+            }
+
+            // 切换高精度状态
+            const newState = !hdTilesetsVisible;
+            setHdTilesetsVisible(newState);
+            hdTilesetsVisible = newState;
+
+            if (newState) {
+                // 高精度开启
+                hdToggleBtn.textContent = '🏙️ 高精度建模（开启）';
+                hdToggleBtn.classList.add('active');
+                // 3D建筑按钮变灰
+                toggleBuildingsBtn.disabled = true;
+                toggleBuildingsBtn.style.opacity = '0.5';
+                toggleBuildingsBtn.style.cursor = 'not-allowed';
+                showToast('🏙️ 高精度建模已开启，3D建筑自动关闭');
+            } else {
+                // 高精度关闭
+                hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                hdToggleBtn.classList.remove('active');
+                // 3D建筑按钮恢复可用，并自动开启3D建筑（如果之前是因为高精度而关闭）
+                toggleBuildingsBtn.disabled = false;
+                toggleBuildingsBtn.style.opacity = '1';
+                toggleBuildingsBtn.style.cursor = 'pointer';
+                if (wasOsmDisabledByHd && !buildingsVisible && buildingsPrimitive) {
+                    setBuildingsVisible(true);
+                    showToast('🏙️ 高精度已关闭，3D建筑已恢复');
+                }
+                // 高精度按钮本身保持可点击（但当前是关闭状态）
+                hdToggleBtn.disabled = false;
+                hdToggleBtn.style.opacity = '1';
+                hdToggleBtn.style.cursor = 'pointer';
+            }
+        });
+
+        // ----- 重置视角 -----
+        const resetBtn = document.getElementById('resetViewBtn');
+        resetBtn.addEventListener('click', () => {
+            const cartographic = viewer.camera.positionCartographic;
+            viewer.camera.flyTo({
+                destination: Cartesian3.fromRadians(
+                    cartographic.longitude,
+                    cartographic.latitude,
+                    cartographic.height
+                ),
+                orientation: {
+                    heading: 0,
+                    pitch: -CesiumMath.PI_OVER_TWO,
+                    roll: 0
+                },
+                duration: 1.2
+            });
+        });
+
+        // ----- 信息弹窗 -----
+        const infoBtn = document.getElementById('infoBtn');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoBtn = document.getElementById('closeInfoBtn');
+        function openInfo() { infoModal.classList.add('active'); }
+        function closeInfo() { infoModal.classList.remove('active'); }
+        infoBtn.addEventListener('click', openInfo);
+        closeInfoBtn.addEventListener('click', closeInfo);
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeInfo();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && infoModal.classList.contains('active')) closeInfo();
+        });
+
+        // ----- 初始飞向北京 -----
         viewer.camera.flyTo({
             destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
             duration: 3
         });
 
         console.log('🌍 Locus Maps 启动成功！');
-        console.log('💡 点击 "☀️ 亮白模式" 可切换光照，时间轴将联动显示/隐藏。');
-                // =============================================
-        // 🧭 重置视角功能（原地恢复俯视，正北朝上）
-        // =============================================
-        const resetBtn = document.getElementById('resetViewBtn');
-
-        resetBtn.addEventListener('click', () => {
-            // 获取当前相机位置（经纬度 + 高度）
-            const cartographic = viewer.camera.positionCartographic;
-            const longitude = cartographic.longitude;
-            const latitude = cartographic.latitude;
-            const height = cartographic.height;
-
-            // 飞回到当前位置的正上方，俯视（朝向地心），正北朝上
-            viewer.camera.flyTo({
-                destination: Cartesian3.fromRadians(longitude, latitude, height),
-                orientation: {
-                    heading: 0,      // 正北朝上（0 弧度）
-                    pitch: -CesiumMath.PI_OVER_TWO, // 垂直俯视（-90°）
-                    roll: 0
-                },
-                duration: 1.2,       // 动画持续 1.2 秒
-                complete: () => {
-                    console.log('🔄 视角已重置');
-                }
-            });
-        });
-
-        // =============================================
-        // ℹ️ 信息弹窗控制
-        // =============================================
-        const infoBtn = document.getElementById('infoBtn');
-        const infoModal = document.getElementById('infoModal');
-        const closeInfoBtn = document.getElementById('closeInfoBtn');
-
-        function openInfo() {
-            infoModal.classList.add('active');
-        }
-
-        function closeInfo() {
-            infoModal.classList.remove('active');
-        }
-
-        infoBtn.addEventListener('click', openInfo);
-        closeInfoBtn.addEventListener('click', closeInfo);
-        // 点击弹窗外部（背景）也可关闭
-        infoModal.addEventListener('click', (e) => {
-            if (e.target === infoModal) {
-                closeInfo();
-            }
-        });
-        // 按 ESC 键关闭弹窗
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && infoModal.classList.contains('active')) {
-                closeInfo();
-            }
-        });
+        console.log('💡 高精度联动已启用：进入丹佛/华盛顿DC/华盛顿州/悉尼/波士顿区域自动切换。');
     </script>
 </body>
 </html>
