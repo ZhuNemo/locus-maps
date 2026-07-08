@@ -609,7 +609,7 @@
 
         // ----- OSM 建筑控制 -----
         let buildingsPrimitive = null;
-        let buildingsVisible = true;
+        let buildingsVisible = false;
         const toggleBuildingsBtn = document.getElementById('buildingsToggleBtn');
         const hdToggleBtn = document.getElementById('hdToggleBtn');
         const toast = document.getElementById('toastMessage');
@@ -631,6 +631,7 @@
         try {
             buildingsPrimitive = await createOsmBuildingsAsync();
             viewer.scene.primitives.add(buildingsPrimitive);
+            setBuildingsVisible(false);
         } catch (e) {
             console.warn('OSM建筑加载失败', e);
             toggleBuildingsBtn.textContent = '🚫 建筑不可用';
