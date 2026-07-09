@@ -405,7 +405,7 @@
     <header class="locus-header">
         <div class="brand">
             <h1>🌍 Locus Maps</h1>
-            <span class="sub">3D地球 V3.0</span>
+            <span class="sub">3D地球 V3.1</span>
             <span class="custom-message">
                 个人开发者，可以访问我的 <a href="https://github.com/ZhuNemo/" target="_blank">GitHub主页</a>
             </span>
@@ -416,6 +416,7 @@
             <button id="hdToggleBtn" class="hd-btn">🏙️ 高精度建模</button>
             <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
             <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
+            <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
             <button id="iterlogBtn" class="interlog-btn" title="迭代记录">⏺️</button>
         </div>
         <div class="credit">
@@ -474,7 +475,39 @@
             <p> *️⃣ 如何快速确定高精度建模具体覆盖范围？搜索城市英文名称，自动定位并手动放大，弹出提示后点击开启高精度模型，观察突然出现色差的地块。使用无路网图层突兀感较弱。</p>
             <p>💡tips：Bing的图源在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D模型，会导致严重错位。浏览非大陆地区均可。</p>
             <p style="font-size:13px; color:#999; margin-top:16px;">数据来源：Cesium ion · OpenStreetMap · Natural Earth</p>
-            <p style="font-size:10px; color:#999; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p>
+            <p style="font-size:11px; color:#999; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p>
+            
+            <p style="font-size:10px; color:#aaa; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
+                ⚠ <a href="#" id="activateGoogle3D" style="color:#666; text-decoration:none; border-bottom:1px dotted #ccc;">进入Google 3D地球（实验性）</a>
+                <span style="color:#666; font-size:10px;"> · 需海外网络环境（代理或VPN），国内网络请最好不要尝试！</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Google地球模式 - 关于弹窗 -->
+    <div id="infoModalGoogle" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeInfoGoogleBtn" class="close-btn">✕</button>
+            <h2>🌍 关于Google地球模式</h2>
+            <p>
+                当前处于 <strong>Google地球模式</strong>，由 Google Photorealistic 3D Tiles 提供全球 3D 模型和高清卫星影像。
+            </p>
+            <p>
+                📍 支持查看全球范围内Google地球写实 3D 模型（楼房、树木等）覆盖的所有城市及区域。无路网及叠加层但可手动搜索地点。
+            </p>
+            <p>
+                🧭 使用鼠标/手指自由旋转、缩放、倾斜视角。
+            </p>
+            <p>
+                <strong>该模式迭代记录：</strong>
+            </p>
+             <p>
+                2026-07-09 接入Google数据并创建Google地球模式
+            </p>
+            <p style="font-size:12px; color:#999; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
+                ⚠️ 本模式需海外网络环境来连接Google Maps服务器。<br>
+                数据来源：Google Maps Platform · Cesium ion
+            </p>
         </div>
     </div>
 
@@ -493,6 +526,7 @@
             <p>07-05 V2.1：补充简介与提示，优化3D建模适配</p>
             <p>07-06 V2.2：添加迭代记录页，细节修改，emoji符号替换</p>
             <p>07-07 V3.0：增加指南针、俯仰角控件，优化移动端体验，接入更多3D Tiles</p>
+            <p>07-09 V3.1：接入Google数据并创建Google地球模式</p>
         </div>
     </div>
 
@@ -931,6 +965,158 @@
         closeInfoBtn.addEventListener('click', closeInfo);
         infoModal.addEventListener('click', (e) => {
             if (e.target === infoModal) closeInfo();
+        });
+        const closeInfoGoogleBtn = document.getElementById('closeInfoGoogleBtn');
+        const infoModalGoogle = document.getElementById('infoModalGoogle');
+        if (closeInfoGoogleBtn && infoModalGoogle) {
+            closeInfoGoogleBtn.addEventListener('click', function() {
+                infoModalGoogle.classList.remove('active');
+            });
+            infoModalGoogle.addEventListener('click', function(e) {
+                if (e.target === infoModalGoogle) {
+                    infoModalGoogle.classList.remove('active');
+                }
+            });
+        }
+
+
+
+        // 激活谷歌3D地球（从“关于”弹窗中触发）
+        document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+                // --- 0. 网络预检：尝试访问 google.com ---
+            // --- 0. 网络预检：通过加载 Google 的 favicon 检测连通性（绕过 CORS）---
+            try {
+                console.log('🔍 正在检测 Google 网络连通性...');
+                const img = new Image();
+                img.src = 'https://www.google.com/favicon.ico';
+                // 超时控制：5秒未加载完成则视为失败
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('加载超时')), 5000);
+                });
+                const loadPromise = new Promise((resolve, reject) => {
+                    img.onload = () => resolve();
+                    img.onerror = () => reject(new Error('图片加载失败'));
+                });
+                await Promise.race([loadPromise, timeoutPromise]);
+                console.log('✅ Google 网络连通');
+            } catch (error) {
+                showToast('⚠️ 无法连接 Google 服务，请检查 VPN 或代理是否开启');
+                console.warn('网络检测失败:', error);
+                return; // 直接退出，不消耗任何会话
+            }
+
+            try {
+                // --- 1. 清除现有底图 ---
+                viewer.imageryLayers.removeAll();
+                console.log('🗑️ 已清除默认影像图层');
+
+                // --- 2. 加载谷歌 3D Tiles ---
+                const tileset = await Cesium3DTileset.fromIonAssetId(2275207);
+                tileset.show = true;
+                viewer.scene.primitives.add(tileset);
+                // 保存引用，以便退出时移除
+                window._googleTileset = tileset;
+                console.log('✅ 谷歌3D Tiles 已加载');
+
+                // --- 3. 飞到香港 ---
+                viewer.camera.flyTo({
+                    destination: Cartesian3.fromDegrees(114.1694, 22.3193, 800),
+                    duration: 2
+                });
+
+                // --- 4. 关闭“关于”弹窗 ---
+                closeInfo();
+
+                // --- 5. UI 切换：隐藏无关按钮，替换“关于”按钮的行为 ---
+            // 隐藏：3D建筑、迭代记录
+            document.getElementById('buildingsToggleBtn').style.display = 'none';
+            document.getElementById('iterlogBtn').style.display = 'none';
+            // 保留“关于”按钮，但替换点击事件
+            const infoBtn = document.getElementById('infoBtn');
+            // 保存原来的点击事件（以便退出时恢复）
+            if (!window._originalInfoClick) {
+                window._originalInfoClick = infoBtn._listeners ? infoBtn._listeners['click'] : null;
+            }
+            // 移除所有 click 事件（如果有多个）
+            infoBtn.replaceWith(infoBtn.cloneNode(true));
+            // 重新获取（因为 clone 后 ID 不变）
+            const newInfoBtn = document.getElementById('infoBtn');
+            // 绑定新的点击事件：打开谷歌模式专属关于
+            newInfoBtn.addEventListener('click', function() {
+                document.getElementById('infoModalGoogle').classList.add('active');
+            });
+            // 显示“退出”按钮
+            document.getElementById('exitGoogleBtn').style.display = 'inline-block';
+                            // --- 6. 提示用户 ---
+                showToast('🌍 谷歌3D地球已激活，并飞往香港');
+
+            } catch (error) {
+                console.error('❌ 激活谷歌3D失败:', error);
+                showToast('⚠️ 谷歌3D加载失败，请检查网络或VPN');
+            }
+        });
+
+        document.getElementById('exitGoogleBtn').addEventListener('click', async function() {
+        document.getElementById('buildingsToggleBtn').disabled = false;
+        document.getElementById('buildingsToggleBtn').style.opacity = '1';
+        document.getElementById('buildingsToggleBtn').style.cursor = 'pointer';
+
+            try {
+                // --- 1. 移除谷歌 3D Tiles ---
+                if (window._googleTileset) {
+                    viewer.scene.primitives.remove(window._googleTileset);
+                    window._googleTileset = null;
+                    console.log('🗑️ 已移除谷歌3D Tiles');
+                }
+
+                // --- 2. 恢复哨兵2底图 ---
+                // 从底图选择器中重新选中哨兵2
+                const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
+                let sentinelViewModel = null;
+                for (const vm of viewModels) {
+                    if (vm.name.includes('Sentinel-2')) {
+                        sentinelViewModel = vm;
+                        break;
+                    }
+                }
+                if (sentinelViewModel) {
+                    viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
+                } else {
+                    // 如果找不到哨兵2，添加默认底图
+                    viewer.imageryLayers.addImageryProvider(
+                        new IonImageryProvider({ assetId: 2 }) // 备用：Bing Aerial
+                    );
+                }
+                console.log('🔄 已恢复哨兵2底图');
+
+                // --- 3. 飞回北京 ---
+                viewer.camera.flyTo({
+                    destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
+                    duration: 2
+                });
+
+                // --- 4. UI 恢复 ---
+        document.getElementById('buildingsToggleBtn').style.display = 'inline-block';
+        document.getElementById('iterlogBtn').style.display = 'inline-block';
+        document.getElementById('exitGoogleBtn').style.display = 'none';
+
+        // 恢复“关于”按钮的原始点击事件（打开普通关于）
+        const infoBtn = document.getElementById('infoBtn');
+        infoBtn.replaceWith(infoBtn.cloneNode(true));
+        const newInfoBtn = document.getElementById('infoBtn');
+        newInfoBtn.addEventListener('click', function() {
+            document.getElementById('infoModal').classList.add('active');
+        });
+
+                // --- 5. 提示用户 ---
+                showToast('✅ 已退出Google地球，恢复默认模式');
+
+            } catch (error) {
+                console.error('❌ 退出Google地球失败:', error);
+                showToast('⚠️ 退出失败，请刷新页面重试');
+            }
         });
 
         // ----- 迭代记录弹窗 -----
