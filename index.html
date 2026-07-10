@@ -405,7 +405,7 @@
     <header class="locus-header">
         <div class="brand">
             <h1>🌍 Locus Maps</h1>
-            <span class="sub">3D地球 V3.1</span>
+            <span class="sub">3D地球 V3.2</span>
             <span class="custom-message">
                 个人开发者，可以访问我的 <a href="https://github.com/ZhuNemo/" target="_blank">GitHub主页</a>
             </span>
@@ -499,13 +499,13 @@
                 🧭 使用鼠标/手指自由旋转、缩放、倾斜视角。
             </p>
             <p>
-                <strong>该模式迭代记录：</strong>
+                <strong>该模式：</strong>
             </p>
-             <p>
-                2026-07-09 接入Google Maps数据，并创建Google地球模式。
+            <p>
+                作为轻量级Google Earth浏览器，能够解决原版地球耗费系统资源过大导致卡顿和死机的问题。不含路网及叠加层。
             </p>
             <p style="font-size:12px; color:#999; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
-                ⚠️ 本模式需海外网络环境来连接Google Maps服务器<br>
+                ⚠️ 需海外网络环境来连接Google Maps服务器<br>
                 数据来源：Google Maps Platform · Cesium ion
             </p>
         </div>
@@ -526,7 +526,8 @@
             <p>07-05 V2.1：补充简介与提示，优化3D建模适配</p>
             <p>07-06 V2.2：添加迭代记录页，细节修改，emoji符号替换</p>
             <p>07-07 V3.0：增加指南针、俯仰角控件，优化移动端体验，接入更多3D Tiles</p>
-            <p>07-09 V3.1：接入Google Maps数据，并创建Google地球模式。</p>
+            <p>07-09 V3.1：接入Google Maps数据，并创建Google地球模式</p>
+            <p>07-10 V3.2：对于Google地球模式进行优化和改进</p>
         </div>
     </div>
 
@@ -553,7 +554,8 @@
             Math as CesiumMath,
             Cesium3DTileset,
             IonImageryProvider,
-            GeographicTilingScheme
+            GeographicTilingScheme,
+            EllipsoidTerrainProvider
         } from 'cesium';
 
         Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMjgxOGI5ZS1lYzQ1LTRkN2ItYWRmYy05YzllOTNhYWZjYzQiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc4MzIyMzUwOX0.HdLWoiGJw7McbyHwjra0Bx7J57pVrZGIJfNk0AZjQBU';
@@ -785,6 +787,7 @@
         // ----- 覆盖区检测与联动 -----
         let lastCheckTime = 0;
         function checkCameraPosition() {
+            if (window._isGoogleMode) return;
             const now = Date.now();
             if (now - lastCheckTime < 200) return;
             lastCheckTime = now;
@@ -793,6 +796,7 @@
             if (!carto) return;
             const lon = CesiumMath.toDegrees(carto.longitude);
             const lat = CesiumMath.toDegrees(carto.latitude);
+            
 
             let inArea = false;
             for (const area of hdAreas) {
@@ -985,6 +989,8 @@
         document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {
             e.preventDefault();
             
+            window._isGoogleMode = true; 
+
                 // --- 0. 网络预检：尝试访问 google.com ---
             // --- 0. 网络预检：通过加载 Google 的 favicon 检测连通性（绕过 CORS）---
             try {
@@ -1020,6 +1026,17 @@
                 window._googleTileset = tileset;
                 console.log('✅ 谷歌3D Tiles 已加载');
 
+                const layerButton =
+                    document.querySelector(".cesium-baseLayerPicker-selected")
+                            .closest("button");
+
+                if (layerButton) {
+                    layerButton.style.display = "none";
+                }
+
+                window._defaultTerrainProvider = viewer.terrainProvider;
+                viewer.terrainProvider = new EllipsoidTerrainProvider();
+
                 // --- 3. 飞到香港 ---
                 viewer.camera.flyTo({
                     destination: Cartesian3.fromDegrees(114.1694, 22.3193, 800),
@@ -1049,6 +1066,7 @@
             });
             // 显示“退出”按钮
             document.getElementById('exitGoogleBtn').style.display = 'inline-block';
+
                             // --- 6. 提示用户 ---
                 showToast('🌍 谷歌3D地球已激活，并飞往香港');
 
@@ -1059,6 +1077,7 @@
         });
 
         document.getElementById('exitGoogleBtn').addEventListener('click', async function() {
+              window._isGoogleMode = false;
         document.getElementById('buildingsToggleBtn').disabled = false;
         document.getElementById('buildingsToggleBtn').style.opacity = '1';
         document.getElementById('buildingsToggleBtn').style.cursor = 'pointer';
@@ -1091,6 +1110,17 @@
                 }
                 console.log('🔄 已恢复哨兵2底图');
 
+                const layerButton =
+                    document.querySelector(".cesium-baseLayerPicker-selected")
+                            .closest("button");
+
+                if (layerButton) {
+                    layerButton.style.display = "";
+                }
+
+                if (window._defaultTerrainProvider) {
+                viewer.terrainProvider = window._defaultTerrainProvider;
+                }
                 // --- 3. 飞回北京 ---
                 viewer.camera.flyTo({
                     destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
