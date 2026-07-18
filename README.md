@@ -2,9 +2,9 @@
 
 Locus Maps - Web端Cesium 3D全球地球地图
 
-基于Cesium、OpenStreetMap开发的轻量3D地球Web应用，支持昼夜光照切换、高精度城市3D建模、全球卫星影像浏览。兼容桌面端、移动端。桌面端显示效果及体验更优。
+基于Cesium、OpenStreetMap开发的轻量3D地球Web应用，支持昼夜光照切换、高精度城市3D建模、全球卫星影像浏览。兼容桌面端、移动端。支持创建为渐进式web应用。
 
-当前版本V2.1
+当前版本V3.2
 
 访问地址：https://zhunemo.github.io/locus-maps/
 
